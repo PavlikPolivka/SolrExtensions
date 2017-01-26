@@ -5,10 +5,9 @@ import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.core.CoreContainer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.nio.file.FileVisitOption;
@@ -21,15 +20,14 @@ import static com.ppolivka.hamcrest.SolrMatchers.docWithValueRetunred;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
-@DisplayName("Softmax Request Handler Test")
-class SoftmaxSearchHandlerTest {
+public class SoftmaxSearchHandlerTest {
 
     EmbeddedSolrServer server;
     CoreContainer container;
 
     //region Setup
-    @BeforeEach
-    void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         container = new CoreContainer("testData/solr");
         container.load();
         server = new EmbeddedSolrServer(container, "collection1");
@@ -49,8 +47,8 @@ class SoftmaxSearchHandlerTest {
         server.add(doc1);
     }
 
-    @AfterEach
-    void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         server.close();
         deleteDirectory("testData/solr/collection1/data");
     }
@@ -66,7 +64,6 @@ class SoftmaxSearchHandlerTest {
     //endregion
 
     @Test
-    @DisplayName("Embedded solr is working")
     public void testReturnQuery() throws Exception {
         QueryResponse response = server.query(new SolrQuery("*:*"));
         assertThat("response does not exists", response, notNullValue());
@@ -74,14 +71,12 @@ class SoftmaxSearchHandlerTest {
     }
 
     @Test
-    @DisplayName("Softmax handler is working")
     public void testSoftmaxHandler() throws Exception {
         QueryResponse response = query("Skywalker");
         assertThat("response does not exists", response, notNullValue());
     }
 
     @Test
-    @DisplayName("Softmax returned results")
     public void testSoftmaxReturnsResults() throws Exception {
         QueryResponse response = query("Skywalker");
         assertThat("skywalker result not returned", response, docWithValueRetunred("id", "1"));
