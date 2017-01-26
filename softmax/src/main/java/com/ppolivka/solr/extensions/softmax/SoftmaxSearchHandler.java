@@ -92,6 +92,6 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
 
     @Override
     public String getDescription() {
-        return null;
+        return "Transfers scores to probabilities. Will range from 0.0 to 1.0.";
     }
 }

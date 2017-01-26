@@ -18,6 +18,7 @@ import java.util.Comparator;
 
 import static com.ppolivka.hamcrest.SolrMatchers.docWithValueRetunred;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
 public class SoftmaxSearchHandlerTest {
@@ -62,6 +63,15 @@ public class SoftmaxSearchHandlerTest {
                 .forEach(File::delete);
     }
     //endregion
+
+    @Test
+    public void testDescription() {
+        SoftmaxSearchHandler softmaxSearchHandler = new SoftmaxSearchHandler();
+        assertThat("incorrect description",
+                softmaxSearchHandler.getDescription(),
+                equalTo("Transfers scores to probabilities. Will range from 0.0 to 1.0.")
+        );
+    }
 
     @Test
     public void testReturnQuery() throws Exception {
