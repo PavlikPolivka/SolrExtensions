@@ -17,10 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+
+import static java.util.stream.IntStream.range;
 
 public class SoftmaxSearchHandler extends RequestHandlerBase {
 
@@ -70,7 +69,6 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
         //TODO override default params
 
         SolrIndexSearcher solrIndexSearcher = req.getSearcher();
-        String queryString = req.getParams().get("q");
         ResponseBuilder responseBuilder = new ResponseBuilder(req, rsp, new ArrayList<>());
 
         Query query = query(req);
@@ -78,10 +76,41 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
                 getIntegerParam(req.getParams(), "sampleSize", sampleSize);
         DocSlice slice = (DocSlice) solrIndexSearcher.getDocList(query, null, Sort.RELEVANCE, 0, finalSampleSize, 1);
 
+        int[] softmaxDocs = new int[slice.size()];
+        float[] softmaxScores = new float[slice.size()];
+        Map<Integer, Float> softmaxMap = new HashMap<>();
+        DocIterator docIterator = slice.iterator();
+        while (docIterator.hasNext()) {
+            int doc = docIterator.nextDoc();
+            float score = docIterator.score();
+            softmaxMap.put(doc, score);
+        }
         //TODO do softmax modifications
+        List<Integer> transformedDocs = new ArrayList<>();
+        transformedDocs.addAll(softmaxMap.keySet());
+        range(0, softmaxMap.size()).forEach(index -> {
+            Integer doc = transformedDocs.get(index);
+            softmaxDocs[index] = doc;
+            softmaxScores[index] = softmaxMap.get(doc);
+        });
 
+        // Return results
+        // Modify result size
+        Integer finalResultSize =
+                getIntegerParam(req.getParams(), "results", results);
+        if(finalResultSize > slice.size()) {
+            finalResultSize = slice.size();
+        }
+        int[] docs = new int[finalResultSize];
+        float[] scores = new float[finalResultSize];
+        range(0, finalResultSize).forEach(index -> {
+            docs[index] = softmaxDocs[index];
+            scores[index] = softmaxScores[index];
+        });
+        float maxScore = 1.0F;
+        DocSlice modifiedSlice = new DocSlice(0, finalResultSize, docs, scores, slice.matches(), maxScore);
         DocListAndSet docListAndSet = new DocListAndSet();
-        docListAndSet.docList = slice;
+        docListAndSet.docList = modifiedSlice;
         responseBuilder.setResults(docListAndSet);
         ResultContext ctx = new BasicResultContext(responseBuilder);
         rsp.addResponse(ctx);

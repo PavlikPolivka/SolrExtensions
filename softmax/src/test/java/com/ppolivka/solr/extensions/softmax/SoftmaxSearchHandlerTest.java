@@ -102,6 +102,12 @@ public class SoftmaxSearchHandlerTest {
         assertThat("more then one result", response.getResults().size(), Matchers.is(1));
     }
 
+    @Test
+    public void testSoftmaxResultSize() throws Exception {
+        QueryResponse response = query("*:*").param("results", "1").execute();
+        assertThat("more then one result", response.getResults().size(), Matchers.is(1));
+    }
+
     public QueryBuilder query(String query) {
         QueryBuilder queryBuilder = new QueryBuilder(server, "/softmax");
         queryBuilder.queryString = query;
