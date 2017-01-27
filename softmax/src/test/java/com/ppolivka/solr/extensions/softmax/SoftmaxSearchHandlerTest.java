@@ -5,6 +5,7 @@ import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.core.CoreContainer;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,7 +15,7 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
+import java.util.*;
 
 import static com.ppolivka.hamcrest.SolrMatchers.docWithValueRetunred;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,11 +34,6 @@ public class SoftmaxSearchHandlerTest {
         container.load();
         server = new EmbeddedSolrServer(container, "collection1");
         indexData();
-    }
-
-    private void indexData() throws Exception {
-        doc("1", "Luke Skywalker", "Master jedi");
-        server.commit();
     }
 
     private void doc(String id, String title, String description) throws Exception {
@@ -64,6 +60,14 @@ public class SoftmaxSearchHandlerTest {
     }
     //endregion
 
+    //region Index
+    private void indexData() throws Exception {
+        doc("1", "Luke Skywalker", "Master jedi");
+        doc("2", "John Rambo", "Badass");
+        server.commit();
+    }
+    //endregion
+
     @Test
     public void testDescription() {
         SoftmaxSearchHandler softmaxSearchHandler = new SoftmaxSearchHandler();
@@ -75,27 +79,69 @@ public class SoftmaxSearchHandlerTest {
 
     @Test
     public void testReturnQuery() throws Exception {
-        QueryResponse response = server.query(new SolrQuery("*:*"));
+        QueryResponse response = defaultQuery().execute();
         assertThat("response does not exists", response, notNullValue());
         assertThat("skywalker result not returned", response, docWithValueRetunred("id", "1"));
     }
 
     @Test
     public void testSoftmaxHandler() throws Exception {
-        QueryResponse response = query("Skywalker");
+        QueryResponse response = query("Skywalker").execute();
         assertThat("response does not exists", response, notNullValue());
     }
 
     @Test
     public void testSoftmaxReturnsResults() throws Exception {
-        QueryResponse response = query("Skywalker");
+        QueryResponse response = query("Skywalker").execute();
         assertThat("skywalker result not returned", response, docWithValueRetunred("id", "1"));
     }
 
-    private QueryResponse query(String queryString) throws Exception {
-        SolrQuery query = new SolrQuery(queryString);
-        query.setRequestHandler("/softmax");
-        return server.query(query);
+    @Test
+    public void testSoftmaxSampleSize() throws Exception {
+        QueryResponse response = query("*:*").param("sampleSize", "1").execute();
+        assertThat("more then one result", response.getResults().size(), Matchers.is(1));
+    }
+
+    public QueryBuilder query(String query) {
+        QueryBuilder queryBuilder = new QueryBuilder(server, "/softmax");
+        queryBuilder.queryString = query;
+        return queryBuilder;
+    }
+
+    public QueryBuilder defaultQuery() {
+        return new QueryBuilder(server, "/select");
+    }
+
+    private static class QueryBuilder {
+
+        EmbeddedSolrServer server;
+        private String handler;
+        private String queryString = "*:*";
+        private Map<String, List<String>> params;
+
+        QueryBuilder(EmbeddedSolrServer server, String handler) {
+            this.server = server;
+            this.handler = handler;
+            this.params = new HashMap<>();
+        }
+
+        public QueryBuilder param(String name, String value) {
+            if(!params.containsKey(name)) {
+                params.put(name, new ArrayList<>());
+            }
+            List<String> values = params.get(name);
+            values.add(value);
+            return this;
+        }
+
+        public QueryResponse execute() throws Exception {
+            SolrQuery query = new SolrQuery(queryString);
+            query.setRequestHandler(handler);
+            params.forEach((key, values) ->
+                query.set(key, values.toArray(new String[values.size()]))
+            );
+            return server.query(query);
+        }
     }
 
 }
