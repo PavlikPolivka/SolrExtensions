@@ -4,6 +4,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.CoreContainer;
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -18,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import static com.ppolivka.hamcrest.SolrMatchers.docWithValueRetunred;
+import static com.ppolivka.hamcrest.SolrMatchers.hasParam;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -108,6 +110,41 @@ public class SoftmaxSearchHandlerTest {
         assertThat("more then one result", response.getResults().size(), Matchers.is(1));
     }
 
+    @Test
+    public void testSoftmaxParamOverride() throws Exception {
+        QueryResponse response = query("*:*")
+                .param("queryField", "title")
+                .param("sampleSize", "2")
+                .param("bias", "1.0")
+                .param("threshold", "0.3")
+                .param("results", "1")
+                .execute();
+        NamedList params = (NamedList) response.getResponse().get("softmaxParams");
+        assertThat("incorrect result count", params, hasParam("results", "1"));
+        assertThat("incorrect query field", params, hasParam("queryField", "title"));
+        assertThat("incorrect sample size", params, hasParam("sampleSize", "2"));
+        assertThat("incorrect bias", params, hasParam("bias", "1.0"));
+        assertThat("incorrect threshold", params, hasParam("threshold", "0.3"));
+    }
+
+    @Test
+    public void testSoftmaxParamOverrideFallbacks() throws Exception {
+        QueryResponse response = query("*:*")
+                .param("queryField", "title")
+                .param("sampleSize", "string")
+                .param("bias", "1.0string")
+                .param("threshold", "0.3string")
+                .param("results", "1string")
+                .execute();
+        NamedList params = (NamedList) response.getResponse().get("softmaxParams");
+        assertThat("incorrect result count", params, hasParam("results", "10"));
+        assertThat("incorrect query field", params, hasParam("queryField", "title"));
+        assertThat("incorrect sample size", params, hasParam("sampleSize", "10"));
+        assertThat("incorrect bias", params, hasParam("bias", "1.0"));
+        assertThat("incorrect threshold", params, hasParam("threshold", "0.0"));
+    }
+
+    //region Solr Query Utils
     public QueryBuilder query(String query) {
         QueryBuilder queryBuilder = new QueryBuilder(server, "/softmax");
         queryBuilder.queryString = query;
@@ -149,5 +186,6 @@ public class SoftmaxSearchHandlerTest {
             return server.query(query);
         }
     }
+    //endregion
 
 }

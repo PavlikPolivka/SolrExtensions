@@ -25,7 +25,7 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
 
     private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private String queryField;
+    private String queryField = "title";
     private Float bias = 1.0F;
     private Float threshold = 0.0F;
     private Integer results = 10;
@@ -35,7 +35,7 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
     @Override
     public void init(NamedList args) {
         super.init(args);
-        queryField = extractStringParam(args, "queryField", null);
+        queryField = extractStringParam(args, "queryField", queryField);
         bias = extractFloatParam(args, "bias", bias);
         threshold = extractFloatParam(args, "threshold", threshold);
         results = extractIntegerParam(args, "results", results);
@@ -66,14 +66,30 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
     @Override
     public void handleRequestBody(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
 
-        //TODO override default params
+        //region Param override
+        Integer finalSampleSize =
+                getIntegerParam(req.getParams(), "sampleSize", sampleSize);
+        Integer finalResultSize =
+                getIntegerParam(req.getParams(), "results", results);
+        Float finalThreshold =
+                getFloatParam(req.getParams(), "threshold", threshold);
+        Float finalBias =
+                getFloatParam(req.getParams(), "bias", bias);
+        String finalQueryField =
+                getStringParam(req.getParams(), "queryField", queryField);
+        NamedList<String> usedParams = new NamedList<>();
+        usedParams.add("queryField", finalQueryField);
+        usedParams.add("results", finalResultSize.toString());
+        usedParams.add("threshold", finalThreshold.toString());
+        usedParams.add("bias", finalBias.toString());
+        usedParams.add("sampleSize", finalSampleSize.toString());
+        rsp.add("softmaxParams", usedParams);
+        //endregion
 
         SolrIndexSearcher solrIndexSearcher = req.getSearcher();
         ResponseBuilder responseBuilder = new ResponseBuilder(req, rsp, new ArrayList<>());
 
-        Query query = query(req);
-        Integer finalSampleSize =
-                getIntegerParam(req.getParams(), "sampleSize", sampleSize);
+        Query query = query(req, finalQueryField);
         DocSlice slice = (DocSlice) solrIndexSearcher.getDocList(query, null, Sort.RELEVANCE, 0, finalSampleSize, 1);
 
         int[] softmaxDocs = new int[slice.size()];
@@ -96,19 +112,18 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
 
         // Return results
         // Modify result size
-        Integer finalResultSize =
-                getIntegerParam(req.getParams(), "results", results);
-        if(finalResultSize > slice.size()) {
-            finalResultSize = slice.size();
+        int resultSize = finalResultSize;
+        if(resultSize > slice.size()) {
+            resultSize = slice.size();
         }
-        int[] docs = new int[finalResultSize];
-        float[] scores = new float[finalResultSize];
-        range(0, finalResultSize).forEach(index -> {
+        int[] docs = new int[resultSize];
+        float[] scores = new float[resultSize];
+        range(0, resultSize).forEach(index -> {
             docs[index] = softmaxDocs[index];
             scores[index] = softmaxScores[index];
         });
         float maxScore = 1.0F;
-        DocSlice modifiedSlice = new DocSlice(0, finalResultSize, docs, scores, slice.matches(), maxScore);
+        DocSlice modifiedSlice = new DocSlice(0, resultSize, docs, scores, slice.matches(), maxScore);
         DocListAndSet docListAndSet = new DocListAndSet();
         docListAndSet.docList = modifiedSlice;
         responseBuilder.setResults(docListAndSet);
@@ -116,10 +131,9 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
         rsp.addResponse(ctx);
     }
 
-    private Query query(SolrQueryRequest request) throws SyntaxError {
+    //region Query builder
+    private Query query(SolrQueryRequest request, String queryField) throws SyntaxError {
         String query = request.getParams().get("q");
-
-
         Map<String, String> edismaxParams = new HashMap<>();
         edismaxParams.put("qf", queryField);
         ExtendedDismaxQParser extendedDismaxQParser = new ExtendedDismaxQParser(
@@ -130,7 +144,9 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
         );
         return extendedDismaxQParser.parse();
     }
+    //endregion
 
+    //region URL param getters
     private Integer getIntegerParam(SolrParams params, String name, Integer defaultValue) {
         String paramUrlValue = params.get(name);
         if(StringUtils.isNotBlank(paramUrlValue)) {
@@ -142,6 +158,27 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
         }
         return defaultValue;
     }
+
+    private Float getFloatParam(SolrParams params, String name, Float defaultValue) {
+        String paramUrlValue = params.get(name);
+        if(StringUtils.isNotBlank(paramUrlValue)) {
+            try {
+                return Float.parseFloat(paramUrlValue);
+            } catch (Exception e) {
+                log.warn("Provided param " + name + " was not float. Falling back to default.");
+            }
+        }
+        return defaultValue;
+    }
+
+    private String getStringParam(SolrParams params, String name, String defaultValue) {
+        String paramUrlValue = params.get(name);
+        if(StringUtils.isNotBlank(paramUrlValue)) {
+            return paramUrlValue;
+        }
+        return defaultValue;
+    }
+    //endregion
 
     @Override
     public String getDescription() {
