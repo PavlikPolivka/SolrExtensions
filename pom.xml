@@ -6,6 +6,17 @@
     <artifactId>extensions</artifactId>
     <packaging>pom</packaging>
     <version>1.1.1-SNAPSHOT</version>
+    <name>SOLR Extensions</name>
+    <description>Collection of SOLR plugins.</description>
+    <url>https://github.com/PavlikPolivka/SolrExtensions</url>
+
+    <developers>
+        <developer>
+            <id>PavelPolivka</id>
+            <name>Pavel POLIVKA</name>
+            <email>polivka.pavel@gmail.com</email>
+        </developer>
+    </developers>
 
     <modules>
         <module>softmax</module>
