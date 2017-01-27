@@ -6,7 +6,6 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.CoreContainer;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,8 +20,7 @@ import java.util.*;
 import static com.ppolivka.hamcrest.SolrMatchers.docWithValueRetunred;
 import static com.ppolivka.hamcrest.SolrMatchers.hasParam;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 public class SoftmaxSearchHandlerTest {
 
@@ -66,6 +64,10 @@ public class SoftmaxSearchHandlerTest {
     private void indexData() throws Exception {
         doc("1", "Luke Skywalker", "Master jedi");
         doc("2", "John Rambo", "Badass");
+        doc("3", "Big data", "Big data page");
+        doc("4", "Big data analysis", "Big data analysis page");
+        doc("5", "data center hosting", "");
+        doc("6", "data about birds", "");
         server.commit();
     }
     //endregion
@@ -101,13 +103,13 @@ public class SoftmaxSearchHandlerTest {
     @Test
     public void testSoftmaxSampleSize() throws Exception {
         QueryResponse response = query("*:*").param("sampleSize", "1").execute();
-        assertThat("more then one result", response.getResults().size(), Matchers.is(1));
+        assertThat("more then one result", response.getResults().size(), is(1));
     }
 
     @Test
     public void testSoftmaxResultSize() throws Exception {
         QueryResponse response = query("*:*").param("results", "1").execute();
-        assertThat("more then one result", response.getResults().size(), Matchers.is(1));
+        assertThat("more then one result", response.getResults().size(), is(1));
     }
 
     @Test
@@ -142,6 +144,49 @@ public class SoftmaxSearchHandlerTest {
         assertThat("incorrect sample size", params, hasParam("sampleSize", "10"));
         assertThat("incorrect bias", params, hasParam("bias", "1.0"));
         assertThat("incorrect threshold", params, hasParam("threshold", "0.0"));
+    }
+
+    @Test
+    public void testBigDataQuery() throws Exception {
+        QueryResponse response = query("big data").param("results", "1").execute();
+        assertThat("big data result not returned", response, docWithValueRetunred("id", "3"));
+    }
+
+    @Test
+    public void testBigDataThresholdNoResultsQuery() throws Exception {
+        QueryResponse response = query("big data")
+                .param("results", "1")
+                .param("threshold", "0.9")
+                .execute();
+        assertThat("some results returned", response.getResults().size(), is(0));
+    }
+
+    @Test
+    public void testBigDataThresholdSomeResultsQuery() throws Exception {
+        QueryResponse response = query("big data")
+                .param("threshold", "0.2")
+                .execute();
+        assertThat("incorrect results", response.getResults().size(), is(2));
+    }
+
+    @Test
+    public void testBigDataBiasThresholdSomeResultsQuery() throws Exception {
+        QueryResponse response = query("big data")
+                .param("threshold", "0.8")
+                .param("bias", "10")
+                .execute();
+        assertThat("incorrect results", response.getResults().size(), is(1));
+        assertThat("big data result not returned", response, docWithValueRetunred("id", "3"));
+    }
+
+    @Test
+    public void testBigDataMixedResultsQuery() throws Exception {
+        QueryResponse response = query("data")
+                .param("threshold", "0.8")
+                .param("bias", "10")
+                .param("results", "1")
+                .execute();
+        assertThat("some results returned", response.getResults().size(), is(0));
     }
 
     //region Solr Query Utils

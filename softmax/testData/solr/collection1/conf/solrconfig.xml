@@ -220,7 +220,6 @@
     <requestHandler name="/softmax" class="com.ppolivka.solr.extensions.softmax.SoftmaxSearchHandler">
         <str name="queryField">title</str>
         <str name="bias">1.0</str>
-        <str name="threshold">0.0</str>
         <str name="results">10</str>
     </requestHandler>
 

@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.stream.IntStream.range;
 
@@ -92,30 +93,43 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
         Query query = query(req, finalQueryField);
         DocSlice slice = (DocSlice) solrIndexSearcher.getDocList(query, null, Sort.RELEVANCE, 0, finalSampleSize, 1);
 
+        int resultSize = finalResultSize;
         int[] softmaxDocs = new int[slice.size()];
         float[] softmaxScores = new float[slice.size()];
         Map<Integer, Float> softmaxMap = new HashMap<>();
         DocIterator docIterator = slice.iterator();
+        double sumOfScores = 0;
         while (docIterator.hasNext()) {
             int doc = docIterator.nextDoc();
             float score = docIterator.score();
             softmaxMap.put(doc, score);
+            sumOfScores += Math.exp(finalBias*score);
         }
-        //TODO do softmax modifications
+        final double scoreSum = sumOfScores;
+        softmaxMap.forEach((doc, score) -> {
+            double expScore = Math.exp(finalBias * score);
+            double newScore = expScore / scoreSum;
+            softmaxMap.put(doc, (float) newScore);
+        });
+        Map<Integer,Float> transformedSoftmaxMap =
+                softmaxMap.entrySet().stream()
+                        .filter(doc -> doc.getValue() > finalThreshold)
+                        .sorted(Map.Entry.<Integer, Float>comparingByValue().reversed())
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+                ;
         List<Integer> transformedDocs = new ArrayList<>();
-        transformedDocs.addAll(softmaxMap.keySet());
-        range(0, softmaxMap.size()).forEach(index -> {
+        transformedDocs.addAll(transformedSoftmaxMap.keySet());
+        if(resultSize > transformedDocs.size()) {
+            resultSize = transformedDocs.size();
+        }
+        range(0, transformedDocs.size()).forEach(index -> {
             Integer doc = transformedDocs.get(index);
             softmaxDocs[index] = doc;
-            softmaxScores[index] = softmaxMap.get(doc);
+            softmaxScores[index] = transformedSoftmaxMap.get(doc);
         });
 
         // Return results
         // Modify result size
-        int resultSize = finalResultSize;
-        if(resultSize > slice.size()) {
-            resultSize = slice.size();
-        }
         int[] docs = new int[resultSize];
         float[] scores = new float[resultSize];
         range(0, resultSize).forEach(index -> {
