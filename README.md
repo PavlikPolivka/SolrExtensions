@@ -18,7 +18,7 @@ This may be useful if you want to do something like banner searching. You have b
     <dependency>
         <groupId>com.ppolivka.solr.extensions</groupId>
         <artifactId>softmax</artifactId>
-        <version>1.1.2</version>
+        <version>1.1.3</version>
     </dependency>
 
 #### Usage
