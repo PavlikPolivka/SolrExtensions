@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/PavlikPolivka/SolrExtensions.svg?branch=master)](https://travis-ci.org/PavlikPolivka/SolrExtensions)
 [![Code Coverage](https://img.shields.io/codecov/c/github/PavlikPolivka/SolrExtensions/master.svg)](https://codecov.io/github/PavlikPolivka/SolrExtensions?branch=master)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.ppolivka.solr.extensions/extensions/badge.svg)](https://maven-badges.herokuapp.com/maven-central/cz.jirutka.rsql/rsql-parser)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.ppolivka.solr.extensions/extensions/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.ppolivka.solr.extensions/extensions)
 
 
 # Solr Extensions
