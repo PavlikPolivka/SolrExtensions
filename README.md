@@ -1,7 +1,6 @@
 [![Build Status](https://travis-ci.org/PavlikPolivka/SolrExtensions.svg?branch=master)](https://travis-ci.org/PavlikPolivka/SolrExtensions)
 [![Code Coverage](https://img.shields.io/codecov/c/github/PavlikPolivka/SolrExtensions/master.svg)](https://codecov.io/github/PavlikPolivka/SolrExtensions?branch=master)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.ppolivka.solr.extensions/extensions/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.ppolivka.solr.extensions/extensions)
-
+[![Maven Central](https://img.shields.io/maven-central/v/com.ppolivka.solr.extensions/extensions.svg)](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ppolivka.solr.extensions%22)
 
 # Solr Extensions
 
