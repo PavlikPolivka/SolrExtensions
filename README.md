@@ -1,16 +1,25 @@
 [![Build Status](https://travis-ci.org/PavlikPolivka/SolrExtensions.svg?branch=master)](https://travis-ci.org/PavlikPolivka/SolrExtensions)
 [![Code Coverage](https://img.shields.io/codecov/c/github/PavlikPolivka/SolrExtensions/master.svg)](https://codecov.io/github/PavlikPolivka/SolrExtensions?branch=master)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.ppolivka.solr.extensions/extensions/badge.svg)](https://maven-badges.herokuapp.com/maven-central/cz.jirutka.rsql/rsql-parser)
+
 
 # Solr Extensions
 
 ## Extensions
 
-### Softmax search handler
+### Softmax
 
 Simple query handler that will transform scores to percentages to determine how sure solr is with it's response.
 
 This may be useful if you want to do something like banner searching. You have bunch of banners in the index and you want to show relevant banner for search term on search page.
 
+#### Maven
+
+    <dependency>
+        <groupId>com.ppolivka.solr.extensions</groupId>
+        <artifactId>softmax</artifactId>
+        <version>1.1.2</version>
+    </dependency>
 
 #### Usage
 
