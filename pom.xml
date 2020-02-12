@@ -39,7 +39,7 @@
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <solr.verison>6.3.0</solr.verison>
+        <solr.verison>8.4.0</solr.verison>
     </properties>
 
     <dependencyManagement>
