@@ -1,6 +1,6 @@
 package com.ppolivka.solr.extensions.softmax;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.solr.common.params.MapSolrParams;
@@ -55,7 +55,7 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
 
     private String extractStringParam(NamedList args, String name, String defaultValue) {
         Object param = extractParam(args, name);
-        return Objects.isNull(param)? defaultValue : param.toString();
+        return Objects.isNull(param) ? defaultValue : param.toString();
     }
 
     private Object extractParam(NamedList args, String name) {
@@ -103,7 +103,7 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
             int doc = docIterator.nextDoc();
             float score = docIterator.score();
             softmaxMap.put(doc, score);
-            sumOfScores += Math.exp(finalBias*score);
+            sumOfScores += Math.exp(finalBias * score);
         }
         final double scoreSum = sumOfScores;
         softmaxMap.forEach((doc, score) -> {
@@ -111,15 +111,14 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
             double newScore = expScore / scoreSum;
             softmaxMap.put(doc, (float) newScore);
         });
-        Map<Integer,Float> transformedSoftmaxMap =
+        Map<Integer, Float> transformedSoftmaxMap =
                 softmaxMap.entrySet().stream()
                         .filter(doc -> doc.getValue() > finalThreshold)
                         .sorted(Map.Entry.<Integer, Float>comparingByValue().reversed())
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-                ;
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         List<Integer> transformedDocs = new ArrayList<>();
         transformedDocs.addAll(transformedSoftmaxMap.keySet());
-        if(resultSize > transformedDocs.size()) {
+        if (resultSize > transformedDocs.size()) {
             resultSize = transformedDocs.size();
         }
         range(0, transformedDocs.size()).forEach(index -> {
@@ -163,7 +162,7 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
     //region URL param getters
     private Integer getIntegerParam(SolrParams params, String name, Integer defaultValue) {
         String paramUrlValue = params.get(name);
-        if(StringUtils.isNotBlank(paramUrlValue)) {
+        if (StringUtils.isNotBlank(paramUrlValue)) {
             try {
                 return Integer.parseInt(paramUrlValue);
             } catch (Exception e) {
@@ -175,7 +174,7 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
 
     private Float getFloatParam(SolrParams params, String name, Float defaultValue) {
         String paramUrlValue = params.get(name);
-        if(StringUtils.isNotBlank(paramUrlValue)) {
+        if (StringUtils.isNotBlank(paramUrlValue)) {
             try {
                 return Float.parseFloat(paramUrlValue);
             } catch (Exception e) {
@@ -187,7 +186,7 @@ public class SoftmaxSearchHandler extends RequestHandlerBase {
 
     private String getStringParam(SolrParams params, String name, String defaultValue) {
         String paramUrlValue = params.get(name);
-        if(StringUtils.isNotBlank(paramUrlValue)) {
+        if (StringUtils.isNotBlank(paramUrlValue)) {
             return paramUrlValue;
         }
         return defaultValue;

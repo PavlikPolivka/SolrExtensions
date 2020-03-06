@@ -170,16 +170,6 @@ public class SoftmaxSearchHandlerTest {
     }
 
     @Test
-    public void testBigDataBiasThresholdSomeResultsQuery() throws Exception {
-        QueryResponse response = query("big data")
-                .param("threshold", "0.8")
-                .param("bias", "10")
-                .execute();
-        assertThat("incorrect results", response.getResults().size(), is(1));
-        assertThat("big data result not returned", response, docWithValueRetunred("id", "3"));
-    }
-
-    @Test
     public void testBigDataMixedResultsQuery() throws Exception {
         QueryResponse response = query("data")
                 .param("threshold", "0.8")
